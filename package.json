@@ -1,0 +1,24 @@
+{
+  "name": "backend_project",
+  "version": "1.0.0",
+  "description": "Node Js project with all the functionality",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vaibhavagarwaleverest/NodeJsBackend.git"
+  },
+  "keywords": [
+    "Node",
+    "Js",
+    "Mongoose"
+  ],
+  "author": "Vaibahv Agarwal",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vaibhavagarwaleverest/NodeJsBackend/issues"
+  },
+  "homepage": "https://github.com/vaibhavagarwaleverest/NodeJsBackend#readme"
+}
