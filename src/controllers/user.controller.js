@@ -2,6 +2,7 @@ import { asyncHandlers } from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import { Users } from "../models/users.model.js";
 import { CloudinaryUpload } from "../utils/cloudinary.js";
+import ApiResponse from "../utils/ApiResponse.js";
 const registerUser = asyncHandlers(async (req, res) => {
   // get user details from frontend
   // validations- not empty
@@ -12,6 +13,7 @@ const registerUser = asyncHandlers(async (req, res) => {
   // remove password and refresh token field from response
   //check for user creation
   // return response
+  console.log("here");
   const { username, fullName, email, password } = req.body;
   if (
     username.trim().length == 0 ||
@@ -22,20 +24,20 @@ const registerUser = asyncHandlers(async (req, res) => {
     console.log("Plase Fill all the Field");
     throw new ApiError(400, "Please Fill all the Fields");
   }
+  console.log("here2");
+
   const existedUser = await Users.findOne({
-    $or: [{ username }, { email }],
+    $or: [{ username }, { email }]
   });
   if (existedUser) {
     throw new ApiError(409, "Email and Username is already Exist");
   }
-
   const avatarLocalPath = req.files?.avatar[0]?.path;
   const converImageLocalPath = req.files?.coverImage[0]?.path;
-
-  if (!avatarLocalPath) {
+  if (!avatarLocalPath) 
+  {
     throw new ApiError(400, "Avatar File is Required1");
   }
-  console.log(avatarLocalPath);
 
   const avatar = await CloudinaryUpload(avatarLocalPath);
   const coverImage = await CloudinaryUpload(converImageLocalPath);
@@ -52,17 +54,20 @@ const registerUser = asyncHandlers(async (req, res) => {
     username: username.toLowerCase(),
   });
 
-  const createdUser = await User.findById(user._id).select(
+  const createdUser = await Users.findById(user._id).select(
     "-password -refreshToken"
   );
 
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
-
+  console.log("here1")
   return res
     .status(201)
     .json(new ApiResponse(200, createdUser, "User registered Successfully"));
+
+
+ 
 });
 
 export { registerUser };
