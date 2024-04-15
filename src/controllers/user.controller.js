@@ -2,6 +2,23 @@ import { asyncHandlers } from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import { Users } from "../models/users.model.js";
 import { CloudinaryUpload } from "../utils/cloudinary.js";
+const generateAccessAndRefereshTokens = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating referesh and access token"
+    );
+  }
+};
 const registerUser = asyncHandlers(async (req, res) => {
   // get user details from frontend
   // validations- not empty
@@ -94,7 +111,8 @@ const loginUser = asyncHandlers(async (req, res) => {
 
   const user_id = user._id;
 
-  const { accessToken, refreshToken } = generateAccessandRefreshToken(user_id);
+  const { accessToken, refreshToken } =
+    generateAccessAndRefereshTokens(user_id);
   const logged_in_user = await Users.findById(user_id).select(
     "-password -refreshToken"
   );
