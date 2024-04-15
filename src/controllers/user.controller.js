@@ -2,26 +2,6 @@ import { asyncHandlers } from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import { Users } from "../models/users.model.js";
 import { CloudinaryUpload } from "../utils/cloudinary.js";
-import ApiResponse from "../utils/ApiResponse.js";
-
-const generateAccessandRefreshToken = async function (user_id) {
-  try {
-    const user = await Users.findById(user_id);
-    const accessToken = await user.generateAccessToken();
-    const refresh_token = await user.generateRefreshToken();
-
-    user.refreshToken = refresh_token;
-    await user.save({ validateBeforeSave: false });
-
-    return { accessToken, refresh_token };
-  } catch (error) {
-    throw new ApiError(
-      500,
-      "Something went wrong while generating referesh and access token"
-    );
-  }
-};
-
 const registerUser = asyncHandlers(async (req, res) => {
   // get user details from frontend
   // validations- not empty
@@ -32,6 +12,7 @@ const registerUser = asyncHandlers(async (req, res) => {
   // remove password and refresh token field from response
   //check for user creation
   // return response
+  console.log("here");
   const { username, fullName, email, password } = req.body;
   if (
     username.trim().length == 0 ||
@@ -42,20 +23,19 @@ const registerUser = asyncHandlers(async (req, res) => {
     console.log("Plase Fill all the Field");
     throw new ApiError(400, "Please Fill all the Fields");
   }
+  console.log("here2");
+
   const existedUser = await Users.findOne({
     $or: [{ username }, { email }],
   });
   if (existedUser) {
     throw new ApiError(409, "Email and Username is already Exist");
   }
-
   const avatarLocalPath = req.files?.avatar[0]?.path;
   const converImageLocalPath = req.files?.coverImage[0]?.path;
-
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar File is Required1");
   }
-  console.log(avatarLocalPath);
 
   const avatar = await CloudinaryUpload(avatarLocalPath);
   const coverImage = await CloudinaryUpload(converImageLocalPath);
@@ -79,7 +59,7 @@ const registerUser = asyncHandlers(async (req, res) => {
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
-
+  console.log("here1");
   return res
     .status(201)
     .json(new ApiResponse(200, createdUser, "User registered Successfully"));
