@@ -156,10 +156,7 @@ const logOutUser = asyncHandlers(async (req, res) => {
     .json(new ApiResponse(200, {}, "User is SuccessFully Logged out"));
 });
 
-const refrshAccessToken= asyncHandlers(async (req,res)=>
-{
-  
-})
+
 
 const changePassword = asyncHandlers(async (req, res) => {
   try {
