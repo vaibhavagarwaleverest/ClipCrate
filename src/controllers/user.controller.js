@@ -2,6 +2,7 @@ import { asyncHandlers } from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import { Users } from "../models/users.model.js";
 import { CloudinaryUpload } from "../utils/cloudinary.js";
+import ApiResponse from "../utils/ApiResponse.js";
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -154,4 +155,95 @@ const logOutUser = asyncHandlers(async (req, res) => {
     .json(new ApiResponse(200, {}, "User is SuccessFully Logged out"));
 });
 
-export { registerUser, loginUser, logOutUser };
+const changePassword = asyncHandlers(async (req, res) => {
+  try {
+    const user_id = req.user._id;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!(oldPassword || newPassword)) {
+      throw new ApiError(400, "Enter Required Fields");
+    }
+    const user = await Users.findById(user_id).select(
+      "-password -refreshToken"
+    );
+    if (!user) {
+      throw new ApiError(401, "Unauthorized request");
+    }
+    const passwordFromDB = user.password;
+    const match = await bcrypt.compare(oldPassword, passwordFromDB);
+    if (!match) {
+      throw new ApiError(403, "Incorrect Password");
+    }
+    await Users.findByIdAndUpdate(
+      user_id,
+      {
+        $set: {
+          password: newPassword,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+    res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Password has Been Changed Successfully"));
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+const accessRefreshToken = asyncHandlers(async (req, res) => {
+  try {
+    const token = req.cookies?.refresh_token || req.body.refresh_token;
+    if (!token) {
+      throw new ApiError(401, "Unauthorized request");
+    }
+    const decodeRefreshToken = jwt.verify(
+      token,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+
+    const user_id = decodeRefreshToken._id;
+    const user = await Users.findById(user_id).select(
+      " -refreshToken -password"
+    );
+    if (!user) {
+      throw new ApiError(401, "invalid refresh token");
+    }
+    if (token !== user?.refreshToken) {
+      throw new ApiError(401, "Refresh Token has been Expired Kindly login");
+    }
+    options = {
+      httpOnly: true,
+      secure: true,
+    };
+    const { accessToken, newRefreshToken } =
+      generateAccessAndRefereshTokens(user_id);
+
+    res
+      .status(200)
+      .cookie("access_token", accessToken)
+      .cookie("refresh_token", newRefreshToken)
+      .json(
+        new ApiResponse(
+          200,
+          {
+            accessToken,
+            refreshToken: newRefreshToken,
+          },
+          "Access token refreshed"
+        )
+      );
+  } catch (error) {
+    throw new ApiError(401, error?.message || "Invalid refresh token");
+  }
+});
+
+export {
+  registerUser,
+  loginUser,
+  logOutUser,
+  accessRefreshToken,
+  changePassword,
+};
