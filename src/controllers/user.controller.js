@@ -2,12 +2,13 @@ import { asyncHandlers } from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import { Users } from "../models/users.model.js";
 import { CloudinaryUpload } from "../utils/cloudinary.js";
+import ApiResponse from "../utils/ApiResponse.js";
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
-    const user = await User.findById(userId);
+    const user = await Users.findById(userId);
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
-
+ 
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
 
@@ -111,8 +112,9 @@ const loginUser = asyncHandlers(async (req, res) => {
 
   const user_id = user._id;
 
-  const { accessToken, refreshToken } =
-    generateAccessAndRefereshTokens(user_id);
+  const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user_id);
+  console.log(accessToken);
+  console.log(refreshToken);
   const logged_in_user = await Users.findById(user_id).select(
     "-password -refreshToken"
   );
@@ -149,9 +151,14 @@ const logOutUser = asyncHandlers(async (req, res) => {
   };
   res
     .status(200)
-    .clearCookies("accessToken", options)
-    .clearCookies("refreshToken", options)
+    .clearCookie("access_token", options)
+    .clearCookie("refresh_token", options)
     .json(new ApiResponse(200, {}, "User is SuccessFully Logged out"));
 });
+
+const refrshAccessToken= asyncHandlers(async (req,res)=>
+{
+  
+})
 
 export { registerUser, loginUser, logOutUser };
