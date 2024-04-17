@@ -3,6 +3,7 @@ import ApiError from "../utils/ApiError.js";
 import { Users } from "../models/users.model.js";
 import { CloudinaryUpload } from "../utils/cloudinary.js";
 import ApiResponse from "../utils/ApiResponse.js";
+import bcrypt from "bcrypt";
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
     const user = await Users.findById(userId);
@@ -98,7 +99,7 @@ const loginUser = asyncHandlers(async (req, res) => {
   ) {
     throw new ApiError(400, "All Fields are Required");
   }
-  console.log(username);
+  // console.log(username);
 
   const user = await Users.findOne({ username: username }).exec();
   if (!user) {
@@ -160,39 +161,31 @@ const logOutUser = asyncHandlers(async (req, res) => {
 
 const changePassword = asyncHandlers(async (req, res) => {
   try {
-    const user_id = req.user._id;
+    const user_id = req.user?._id;
+    console.log(user_id);
     const { oldPassword, newPassword } = req.body;
 
     if (!(oldPassword || newPassword)) {
       throw new ApiError(400, "Enter Required Fields");
     }
-    const user = await Users.findById(user_id).select(
-      "-password -refreshToken"
-    );
+    const user = await Users.findById(user_id)
     if (!user) {
       throw new ApiError(401, "Unauthorized request");
     }
-    const passwordFromDB = user.password;
-    const match = await bcrypt.compare(oldPassword, passwordFromDB);
+    console.log(oldPassword);
+    const match = await user.isPasswordCorrect(oldPassword);
+    console.log(match);
     if (!match) {
       throw new ApiError(403, "Incorrect Password");
     }
-    await Users.findByIdAndUpdate(
-      user_id,
-      {
-        $set: {
-          password: newPassword,
-        },
-      },
-      {
-        new: true,
-      }
-    );
+    user.password=newPassword
+    user.save({validateBeforeSave:false})
     res
       .status(200)
       .json(new ApiResponse(200, {}, "Password has Been Changed Successfully"));
   } catch (error) {
     console.log(error);
+    throw new ApiError(401, error,"Something went wrong");
   }
 });
 
