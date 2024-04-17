@@ -3,9 +3,10 @@ import ApiError from "../utils/ApiError.js";
 import { Users } from "../models/users.model.js";
 import { CloudinaryUpload } from "../utils/cloudinary.js";
 import ApiResponse from "../utils/ApiResponse.js";
+import { response } from "express";
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
-    const user = await User.findById(userId);
+    const user = await Users.findById(userId);
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
@@ -160,7 +161,7 @@ const changePassword = asyncHandlers(async (req, res) => {
     const user_id = req.user._id;
     const { oldPassword, newPassword } = req.body;
 
-    if (!(oldPassword || newPassword)) {
+    if (!oldPassword || !newPassword) {
       throw new ApiError(400, "Enter Required Fields");
     }
     const user = await Users.findById(user_id).select(
@@ -240,10 +241,118 @@ const accessRefreshToken = asyncHandlers(async (req, res) => {
   }
 });
 
+const updateDetails = asyncHandlers(async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    throw new ApiError(401, "Unauthorized request");
+  }
+  const { username, email, fullName } = req.body;
+  if (!username || !email || !fullName) {
+    throw new ApiError(401, "Fields Should not be empty");
+  }
+  const updatedUser = await Users.findByIdAndUpdate(
+    user?._id,
+    {
+      $set: {
+        username: username,
+        email: email,
+        fullName: fullName,
+      },
+    },
+    {
+      new: true,
+    }
+  ).select("-refreshToken -password");
+  res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "Details Updated Successfully"));
+});
+const updateAvatar = asyncHandlers(async (req, res) => {
+  try {
+    let user_id = req.user?._id;
+
+    const newAvatarLocalPath = req.files.avatar[0].path;
+
+    if (!newAvatarLocalPath) {
+      throw new ApiError(401, "file should not be empty");
+    }
+
+    const response = await CloudinaryUpload(newAvatarLocalPath);
+
+    if (!response) {
+      throw new ApiError(401, "File has not uploaded to cloudianry server");
+    }
+
+    const updateAvatarUser = await Users.findByIdAndUpdate(
+      user_id,
+      {
+        $set: {
+          avatar: response.url,
+        },
+      },
+      {
+        new: true,
+      }
+    ).select(" -password ");
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          updateAvatarUser,
+          "Avatar has been updated Successfully"
+        )
+      );
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(401, "Something went wrong");
+  }
+});
+const updateCoverImage = asyncHandlers(async (req, res) => {
+  try {
+    const user_id = req.user?._id;
+
+    const newCoverImagePath = req.files.coverImage[0].path;
+    if (!newCoverImagePath) {
+      throw new ApiError(401, "Path is missing");
+    }
+    const uploadCoverImage = await CloudinaryUpload(newCoverImagePath);
+
+    if (!uploadCoverImage) {
+      throw new ApiError(401, "File is Not uploaded to Cludianry");
+    }
+    const updateCoverImageUser = await Users.findByIdAndUpdate(
+      user_id,
+      {
+        $set: {
+          coverImage: uploadCoverImage.url,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          updateCoverImageUser,
+          "Cover Image has been updated Successfully"
+        )
+      );
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 export {
   registerUser,
   loginUser,
   logOutUser,
   accessRefreshToken,
   changePassword,
+  updateDetails,
+  updateAvatar,
+  updateCoverImage,
 };

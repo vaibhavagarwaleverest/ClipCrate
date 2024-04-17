@@ -5,6 +5,8 @@ import { loginUser } from "../controllers/user.controller.js";
 import { logOutUser } from "../controllers/user.controller.js";
 import { changePassword } from "../controllers/user.controller.js";
 import { auth } from "../middlewares/auth.middleware.js";
+import { updateAvatar } from "../controllers/user.controller.js";
+import { updateCoverImage } from "../controllers/user.controller.js";
 const router = Router();
 
 router.route("/register").post(
@@ -23,5 +25,15 @@ router.route("/register").post(
 router.route("/login").post(loginUser);
 router.route("/logOut").post(auth, logOutUser);
 router.route("/changePassword").post(auth, changePassword);
+router
+  .route("/updateAvatar")
+  .post(auth, upload.fields({ name: "avatar", maxCount: 1 }), updateAvatar);
+router
+  .route("/updateCoverImage")
+  .post(
+    auth,
+    upload.fields({ name: "coverImage", maxCount: 1 }),
+    updateCoverImage
+  );
 
 export default router;
