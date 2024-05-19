@@ -1,4 +1,4 @@
-import { asyncHandlers } from "../utils/asyncHandler.js";
+import asyncHandlers  from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import { Users } from "../models/users.model.js";
 import { CloudinaryUpload } from "../utils/cloudinary.js";
@@ -31,7 +31,6 @@ const registerUser = asyncHandlers(async (req, res) => {
   // remove password and refresh token field from response
   //check for user creation
   // return response
-  console.log("here");
   const { username, fullName, email, password } = req.body;
   if (
     username.trim().length == 0 ||
@@ -39,10 +38,8 @@ const registerUser = asyncHandlers(async (req, res) => {
     email.trim().length == 0 ||
     password.trim().length == 0
   ) {
-    console.log("Plase Fill all the Field");
     throw new ApiError(400, "Please Fill all the Fields");
   }
-  console.log("here2");
 
   const existedUser = await Users.findOne({
     $or: [{ username }, { email }],
@@ -58,7 +55,6 @@ const registerUser = asyncHandlers(async (req, res) => {
 
   const avatar = await CloudinaryUpload(avatarLocalPath);
   const coverImage = await CloudinaryUpload(converImageLocalPath);
-  console.log("Avatar", avatar);
   if (!avatar) {
     throw new ApiError(400, "Avatar file is required");
   }
@@ -78,7 +74,6 @@ const registerUser = asyncHandlers(async (req, res) => {
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
-  console.log("here1");
   return res
     .status(201)
     .json(new ApiResponse(200, createdUser, "User registered Successfully"));
@@ -99,7 +94,6 @@ const loginUser = asyncHandlers(async (req, res) => {
   ) {
     throw new ApiError(400, "All Fields are Required");
   }
-  // console.log(username);
 
   const user = await Users.findOne({ username: username }).exec();
   if (!user) {
@@ -115,8 +109,8 @@ const loginUser = asyncHandlers(async (req, res) => {
 
   const { accessToken, refreshToken } =
     await generateAccessAndRefereshTokens(user_id);
-  console.log(accessToken);
-  console.log(refreshToken);
+  
+
   const logged_in_user = await Users.findById(user_id).select(
     "-password -refreshToken"
   );
@@ -161,7 +155,7 @@ const logOutUser = asyncHandlers(async (req, res) => {
 const changePassword = asyncHandlers(async (req, res) => {
   try {
     const user_id = req.user?._id;
-    console.log(user_id);
+  
     const { oldPassword, newPassword } = req.body;
 
     if (!oldPassword || !newPassword) {
@@ -171,9 +165,9 @@ const changePassword = asyncHandlers(async (req, res) => {
     if (!user) {
       throw new ApiError(401, "Unauthorized request");
     }
-    console.log(oldPassword);
+
     const match = await user.isPasswordCorrect(oldPassword);
-    console.log(match);
+
     if (!match) {
       throw new ApiError(403, "Incorrect Password");
     }
@@ -183,7 +177,7 @@ const changePassword = asyncHandlers(async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, {}, "Password has Been Changed Successfully"));
   } catch (error) {
-    console.log(error);
+    
     throw new ApiError(401, error, "Something went wrong");
   }
 });
@@ -298,7 +292,7 @@ const updateAvatar = asyncHandlers(async (req, res) => {
         )
       );
   } catch (error) {
-    console.log(error);
+    
     throw new ApiError(401, "Something went wrong");
   }
 });
@@ -336,7 +330,7 @@ const updateCoverImage = asyncHandlers(async (req, res) => {
         )
       );
   } catch (error) {
-    console.log(error);
+  
   }
 });
 
@@ -487,5 +481,6 @@ export {
   updateDetails,
   updateAvatar,
   updateCoverImage,
+  getChannelProile,
   getWatchHistory
 };
