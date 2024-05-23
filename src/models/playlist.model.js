@@ -22,3 +22,5 @@ const playlistSchema= new mongoose.Schema({
         ref:"Users"
     }
 })
+const Playlist=new mongoose.model("Playlist",playlistSchema)
+export default Playlist

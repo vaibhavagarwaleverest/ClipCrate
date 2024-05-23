@@ -3,7 +3,7 @@ import Like from "../models/likes.model.js"
 import Comment from "../models/comment.model.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandlers  from "../utils/asyncHandler.js";
-import { isValidObjectId } from "mongoose";
+import mongoose, { Mongoose, isValidObjectId } from "mongoose";
 import { Video } from "../models/videos.model.js";
 import { Users } from "../models/users.model.js";
 import { Tweet } from "../models/tweet.model.js";
@@ -166,6 +166,66 @@ const toggleTweetLike= asyncHandlers(async(req,res)=>
 
 })
 const getAllVideoLikes=asyncHandlers(async(req,res)=>{
+    const {videoId}=req.params
+    if(!isValidObjectId(videoId))
+    {
+        throw new ApiError(400,"invalid Video Id")
+    }
+    const video = await Video.findById(videoId)
+    if(!video)
+    {
+        throw new ApiError(400,"Video Not Found")
+    }
+    const user=await Users.findById(req.user._id)
+    if(!user)
+    {
+        throw new ApiError(400,"only authorised User can Like a comment")
+    }
+    const pipeline=[]
+    pipeline.push({
+        $match: new mongoose.Types.ObjectId(videoId)
+    })
+    pipeline.push({
+        $lookup:{
+            from:"Videos",
+            localField:"video",
+            foreignField:"_id",
+            as:"videos",
+            pipeline:[
+                {
+                    $project:
+                    {
+                        title:1,
+                        description:1
+                    }
+                }
+            ]
+        }
+    })
+    pipeline.push({
+        $lookup:{
+            from:"Users",
+            localField:"likedBy",
+            foreignField:"_id",
+            as:"users",
+            pipeline:[
+                {
+                    $project:
+                    {
+                        name:1,
+                        email:1
+                    }
+                }
+            ]
+        }
+    })
+    const aggregate= await Like.aggregate(pipeline)
+    if(!aggregate)
+    {
+        throw new ApiError(400,"Video Likes Not Found")
+    }
+    return res.status(200).json(new ApiResponse(200,aggregate,"Video Likes Fetched Successfully"));
+    
 
 })
     
