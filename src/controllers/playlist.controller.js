@@ -66,6 +66,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 })
 
 const getPlaylistById = asyncHandler(async (req, res) => {
+    try{
     const {playlistId} = req.params
     //TODO: get playlist by id
     if(!isValidObjectId(playlistId))
@@ -77,12 +78,18 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     {
         throw new ApiError(400,"Only authorised user can fetch a playlist")
     }
-   const playlist= await Playlist.findOne(playlistId)
+   const playlist= await Playlist.findById(playlistId)
    if(!playlist)
    {
     throw new ApiError(400,"Playlist Not Found")
    }
    return res.status(200).json(new ApiResponse(200,playlist,"Playlist found successfully"))
+}
+catch(error)
+{
+    console.log(error.message)
+    throw new ApiError(400,error.message)
+}
 
 
 })
@@ -146,6 +153,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
         throw new ApiError(400,"You are not authorized to remove video from this playlist")
     }
     const video = await Video.findById(videoId)
+    console.log(video)
     if(!video)
     {
         throw new ApiError(400,"Video Not found")
@@ -162,7 +170,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
     {
         throw new ApiError(400,"Video is not deleted from a playlist")
     }
-    return res.status(200).json(new ApiResponse(200,updatePlaylist,"Playlist is Updated Successfully"))
+    return res.status(200).json(new ApiResponse(200,updatePlaylist,"Video from the Playlist deleted Successfully"))
 
 
 })
@@ -217,7 +225,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
         description:description
     },{$new:true})
 
-    return res.status(200).json(200,updatedPlaylist,"Playlist updated sucessfully")
+    return res.status(200).json(new ApiResponse(200,updatedPlaylist,"Playlist updated sucessfully"))
         
 
     //TODO: update playlist
