@@ -1,19 +1,20 @@
-import { Subscription } from "../models/subscription.model";
+import { Subscription } from "../models/subscription.model.js";
 import mongoose,{ isValidObjectId } from "mongoose";
-import ApiError from "../utils/ApiError";
-import asyncHandler from "../utils/asyncHandler";
-import ApiResponse from "../utils/ApiResponse";
-import { Users } from "../models/users.model";
+import ApiError from "../utils/ApiError.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import { Users } from "../models/users.model.js";
 const toggleSubscription = asyncHandler(async (req, res) => {
     const {channelId} = req.params
     if(!isValidObjectId(channelId))
     {
+        console.log(channelId)
         throw new ApiError(400,"Channel id is Invalid")
     }
     const channel= await Users.findById(channelId)
     if(!channel)
     {
-        throw new ApiError("Channel Does'nt exist")
+        throw new ApiError(400,"Channel Does'nt exist")
     }
     const user = await Users.findById(req.user._id)
     if(!user)
@@ -35,10 +36,10 @@ const toggleSubscription = asyncHandler(async (req, res) => {
         {
             throw new ApiError(400,"Something went wrong while subscribing")
         }
-        return res.status(200).json(200,channelSubscribed,"Channel is Successfully subscribed")
+        return res.status(200).json(new ApiResponse(200,channelSubscribed,"Channel is Successfully subscribed"))
     }
     
-        const unsubscribed=await Subscription.findByIdAndDelete({
+        const unsubscribed=await Subscription.deleteOne({
             subscriber:req.user._id,
             channel:channelId
         })
@@ -46,7 +47,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
         {
             throw new ApiError(400,"Something went wrong while unsubscribing")
         }
-        return res.status(200).json(200,unsubscribed,"Channel is Successfully unsubscribed")
+        return res.status(200).json(new ApiResponse(200,unsubscribed,"Channel is Successfully unsubscribed"))
     
     // TODO: toggle subscription
 })
@@ -72,7 +73,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     const pipeline=[];
     pipeline.push({
         $match:{
-            channel:channelId
+            channel:new mongoose.Types.ObjectId(channelId)
         }
     })
     pipeline.push({
@@ -95,7 +96,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     {
         throw new ApiError(400,"Something went wrong while fetching detauls")
     }
-    return res.status(200).json(200,aggregate,"Subscriber List fetched Successfully")
+    return res.status(200).json(new ApiResponse(200,aggregate,"Subscriber List fetched Successfully"))
     
 })
 
@@ -119,7 +120,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     const pipeline=[];
     pipeline.push({
         $match:{
-            subscriber:subscriberId
+            subscriber:new mongoose.Types.ObjectId(subscriberId)
         }
     })
     pipeline.push({
@@ -142,7 +143,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     {
         throw new ApiError(400,"Something went wrong while fetching detauls")
     }
-    return res.status(200).json(200,aggregate,"Subscribed Channel List fetched Successfully")
+    return res.status(200).json(new ApiResponse(200,aggregate,"Subscribed Channel List fetched Successfully"))
 
 })
 
